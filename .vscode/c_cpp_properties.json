@@ -1,0 +1,24 @@
+{
+  "configurations": [{
+    "name": "kernel-arm64",
+    "compilerPath": "/usr/bin/aarch64-linux-gnu-gcc",
+    "intelliSenseMode": "linux-gcc-arm64",
+    "cStandard": "gnu11",
+    "includePath": [
+      "${env:HOME}/linux/include",
+      "${env:HOME}/linux/include/uapi",
+      "${env:HOME}/linux/include/generated",
+      "${env:HOME}/linux/include/generated/uapi",
+      "${env:HOME}/linux/arch/arm64/include",
+      "${env:HOME}/linux/arch/arm64/include/uapi",
+      "${env:HOME}/linux/arch/arm64/include/generated",
+      "${env:HOME}/linux/arch/arm64/include/generated/uapi"
+    ],
+    "defines": ["__KERNEL__", "MODULE", "KBUILD_MODNAME=\"demo\""],
+    "forcedInclude": [
+      "${env:HOME}/linux/include/linux/kconfig.h",
+      "${env:HOME}/linux/include/linux/compiler_types.h"
+    ]
+  }],
+  "version": 4
+}
