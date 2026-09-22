@@ -5,3 +5,4 @@
 *.symvers
 *.order
 .*.cmd
+scratch.sh
