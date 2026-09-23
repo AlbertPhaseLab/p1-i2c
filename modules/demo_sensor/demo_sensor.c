@@ -2,7 +2,7 @@
 #include <linux/module.h>
 #include <linux/i2c.h>
 #include <linux/kernel.h>
-#include <linux/sysfs.h>
+#include <linux/hwmon.h>
 
 #define REG_TEMP 0x00
 
@@ -10,42 +10,65 @@ struct demo_data {
     struct i2c_client *client;
 };
 
-static ssize_t temp_show(struct device *dev, struct device_attribute *attr, char *buf)
+static int demo_read(struct device *dev, enum hwmon_sensor_types type, u32 attr, int channel, long *val)
 {
     struct demo_data *data = dev_get_drvdata(dev);
-    int val = i2c_smbus_read_word_data(data->client, REG_TEMP);
+    int raw;
 
-    if (val < 0)
-        return val;
+    if (type != hwmon_temp || attr != hwmon_temp_input)
+        return -EOPNOTSUPP;
 
-    return sysfs_emit(buf, "%d\n", val);
+    raw = i2c_smbus_read_word_data(data->client, REG_TEMP);
+    if (raw < 0)
+        return raw;
+
+    /* raw are units of C (typical format of sensors such as TMP102) 
+    hwmon expects values in 1/1000th of a degree Celsius */
+
+    *val = raw * 625 / 10;
+    return 0;
 }
-static DEVICE_ATTR_RO(temp);
 
-static struct attribute *demo_attrs[] = {
-    &dev_attr_temp.attr,
-    NULL,
+static umode_t demo_is_visible(const void *data, enum hwmon_sensor_types type, u32 attr, int channel)
+{
+    if (type == hwmon_temp && attr == hwmon_temp_input)
+        return 0444;
+    return 0;
+}
+
+static const struct hwmon_channel_info *demo_info[] = {
+    HWMON_CHANNEL_INFO(temp, HWMON_T_INPUT),
+    NULL
 };
-ATTRIBUTE_GROUPS(demo);
+
+static const struct hwmon_ops demo_ops = {
+    .is_visible = demo_is_visible,
+    .read = demo_read,
+};
+
+static const struct hwmon_chip_info demo_chip_info = {
+    .ops = &demo_ops,
+    .info = demo_info,
+};
 
 static int demo_probe(struct i2c_client *client)
 {
     struct demo_data *data;
-    int val;
+    struct device *hwmon_dev;
 
     data = devm_kzalloc(&client->dev, sizeof(*data), GFP_KERNEL);
     if (!data)
         return -ENOMEM;
 
     data->client = client;
-    dev_set_drvdata(&client->dev, data);
+    
+    hwmon_dev = devm_hwmon_device_register_with_info(&client->dev, "demo_sensor", data, &demo_chip_info, NULL);
+    
+    if (IS_ERR(hwmon_dev))
+        return PTR_ERR(hwmon_dev);
+    
+    dev_info(&client->dev, "demo_sensor: registered via hwmon\n");
 
-    val = i2c_smbus_read_word_data(client, REG_TEMP);
-    if (val < 0) {
-        dev_err(&client->dev, "read failed (%d)\n", val);
-        return val;
-    }
-    dev_info(&client->dev, "demo_sensor: reg 0x%02x = 0x%04x\n", REG_TEMP, val);
     return 0;
 }
 
@@ -61,10 +84,7 @@ static const struct i2c_device_id demo_id[] = {
 MODULE_DEVICE_TABLE(i2c, demo_id);
 
 static struct i2c_driver demo_driver = {
-    .driver = {
-        .name = "demo_sensor",
-        .dev_groups = demo_groups,
-    },
+    .driver = {.name = "demo_sensor"},
     .probe    = demo_probe,
     .remove   = demo_remove,
     .id_table = demo_id,
@@ -72,4 +92,4 @@ static struct i2c_driver demo_driver = {
 module_i2c_driver(demo_driver);
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("Week 2 day 2: expose sensor reading via sysfs");
+MODULE_DESCRIPTION("Week 2 day 3: hmwon driver for simulated sensor");
