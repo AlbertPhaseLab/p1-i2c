@@ -19,8 +19,10 @@ static int demo_read(struct device *dev, enum hwmon_sensor_types type, u32 attr,
         return -EOPNOTSUPP;
 
     raw = i2c_smbus_read_word_data(data->client, REG_TEMP);
-    if (raw < 0)
+    if (raw < 0) {
+        dev_dbg(dev, "failed to read temperature register: %d\n", raw);
         return raw;
+    }
 
     /* raw are units of C (typical format of sensors such as TMP102) 
     hwmon expects values in 1/1000th of a degree Celsius */
@@ -65,7 +67,7 @@ static int demo_probe(struct i2c_client *client)
     hwmon_dev = devm_hwmon_device_register_with_info(&client->dev, "demo_sensor", data, &demo_chip_info, NULL);
     
     if (IS_ERR(hwmon_dev))
-        return PTR_ERR(hwmon_dev);
+        return dev_err_probe(&client->dev, PTR_ERR(hwmon_dev), "failed to register hwmon device\n");
     
     dev_info(&client->dev, "demo_sensor: registered via hwmon\n");
 
