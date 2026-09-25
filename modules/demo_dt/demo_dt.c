@@ -6,8 +6,12 @@
 static int demo_dt_probe(struct platform_device *pdev)
 {
     u32 id = 0;
+    int ret;
 
-    of_property_read_u32(pdev->dev.of_node, "sensor-id", &id);
+    ret = of_property_read_u32(pdev->dev.of_node, "sensor-id", &id);
+    if (ret)
+        dev_warn(&pdev->dev, "sensor-id not found (%d), using default\n", ret);
+    
     dev_info(&pdev->dev, "demo_dt: probed via Device Tree, sensor-id=%u\n", id);
     return 0;
 }
