@@ -1,18 +1,23 @@
 # p1-i2c — Embedded Linux Portfolio, project 1/3
 
 Linux 6.12 LTS kernel (arm64) built from scratch, with a minimal BusyBox-based
-initramfs, running in QEMU (`-M virt`) from WSL2. Includes I2C driver development
-(manual instantiation and Device Tree auto-probing) for a simulated sensor.
+initramfs, running in QEMU (`-M virt`) from WSL2. Complete I2C driver development
+cycle: manual instantiation, sysfs, hwmon, Device Tree auto-probing, and regmap.
 
 ## Contents
 
 ### Modules (`modules/`)
 - `hello` — first module, pr_info on load/unload
 - `hello_misc` — character device with a configurable parameter
-- `demo_sensor` — I2C driver for a simulated sensor (i2c-stub), exposing readings
-  via a manual sysfs attribute and via the standard `hwmon` subsystem, with
-  `dev_err_probe`-based error handling
-- `demo_dt` — platform driver auto-probed via Device Tree (no manual instantiation)
+- `demo_sensor` — I2C driver for a simulated sensor (i2c-stub): manual
+  instantiation (`id_table`) and Device Tree matching (`of_match_table`),
+  readings exposed via the standard `hwmon` subsystem, `dev_err_probe`-based
+  error handling
+- `demo_sensor_regmap` — experimental variant of `demo_sensor` using the
+  `regmap` abstraction instead of direct SMBus calls (verified working with
+  i2c-stub; required explicit endianness configuration)
+- `demo_dt` — platform driver auto-probed via Device Tree (no manual
+  instantiation), used to verify the DT matching mechanism end-to-end
 
 ### Scripts
 - `env.sh` — shared build variables (architecture, cross-compiler, paths)
@@ -23,8 +28,8 @@ initramfs, running in QEMU (`-M virt`) from WSL2. Includes I2C driver developmen
   required for the `demo_dt` auto-probe demo
 
 ### Docs
-- `docs/` — kept out of this public repo; detailed day-by-day notes live in a
-  private companion repository
+- `docs/` — kept out of this public repo; detailed day-by-day notes (including
+  debugging walkthroughs) live in a private companion repository
 
 ## Usage
 
@@ -56,5 +61,8 @@ dmesg | tail   # "probed via Device Tree, sensor-id=42" — no manual instantiat
 - **Week 1** — environment, LTS kernel, simulated I2C bus (i2c-stub), basic modules
 - **Week 2** — I2C driver for a simulated sensor: manual instantiation, sysfs
   exposure, migration to `hwmon`, robust error handling (`dev_err_probe`)
-- **Week 3** (in progress) — Device Tree: platform driver auto-probing (day 1);
-  applying the same pattern to the I2C driver next
+- **Week 3** — Device Tree: platform driver auto-probing, `of_match_table` applied
+  to the I2C driver, and a `regmap`-based variant with an endianness bug found and
+  fixed. **Project 1 complete.**
+
+Next: project 2 of the portfolio — a custom Yocto image.
