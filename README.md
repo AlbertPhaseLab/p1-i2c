@@ -22,7 +22,8 @@ cycle: manual instantiation, sysfs, hwmon, Device Tree auto-probing, and regmap.
 ### Scripts
 - `env.sh` — shared build variables (architecture, cross-compiler, paths)
 - `build.sh` — builds every module in `modules/*`, copies the `.ko` files (and
-  `i2c-stub.ko`) into the rootfs, and repacks the initramfs
+  `i2c-stub.ko`) into the rootfs, and repacks the initramfs. Run `./build.sh clean`
+  to force a full rebuild of every module instead of an incremental one.
 - `run.sh` — boots QEMU with the auto-generated Device Tree blob
 - `run-dt.sh` — boots QEMU with a custom Device Tree blob (`~/virt-custom.dtb`),
   required for the `demo_dt` auto-probe demo
@@ -37,6 +38,14 @@ cycle: manual instantiation, sysfs, hwmon, Device Tree auto-probing, and regmap.
 ./build.sh      # build kernel modules and refresh the initramfs
 ./run.sh        # boot QEMU (Ctrl-A, X to exit)
 ./run-dt.sh     # boot QEMU with a custom Device Tree blob (for demo_dt)
+```
+
+`make` only recompiles what changed, so `./build.sh` is normally enough. If a
+`.ko` doesn't seem to reflect a recent code change (rare, but can happen with
+WSL2's filesystem timestamps), force a full rebuild with:
+
+```bash
+./build.sh clean
 ```
 
 Inside QEMU, typical I2C workflow:
